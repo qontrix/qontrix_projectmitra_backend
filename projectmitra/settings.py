@@ -119,7 +119,7 @@ DATABASES = {
 }
 
 DATABASES = {
-    'default': dj_database_url.config(default=os.getenv("postgresql://tech_mitra_user:oerw1En7eCslVANKygIL0cFvGoBLwEkd@dpg-d1qk1qq4d50c739cg390-a/tech_mitra"))
+    'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
 }
 
 
