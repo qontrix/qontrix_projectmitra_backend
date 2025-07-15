@@ -14,6 +14,8 @@ import os
 from pathlib import Path
 from datetime import timedelta
 import dj_database_url
+from dotenv import load_dotenv
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -56,6 +58,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'accounts',
+    'projects',
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
@@ -118,7 +121,7 @@ WSGI_APPLICATION = 'projectmitra.wsgi.application'
 #    }
 #}
 
-DATABASES = {
+DATABASES = {  #for postgresdb integration with render with Internal DB URL: postgresql://tech_mitra_user:oerw1En7eCslVANKygIL0cFvGoBLwEkd@dpg-d1qk1qq4d50c739cg390-a/tech_mitra
     'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
 }
 

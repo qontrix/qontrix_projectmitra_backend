@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions, status
-from .models import Project, Purchase, Comment
-from .serializers import ProjectSerializer, PurchaseSerializer, CommentSerializer
+from .models import Project, Purchase, Comment, WishlistRequest
+from .serializers import ProjectSerializer, PurchaseSerializer, CommentSerializer, WishlistRequestSerializer
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from rest_framework.decorators import action
@@ -71,5 +71,31 @@ class CommentViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
+
+
+
+class WishlistRequestViewSet(viewsets.ModelViewSet):
+    serializer_class = WishlistRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'admin':
+            return WishlistRequest.objects.all()
+        return WishlistRequest.objects.filter(user=user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def approve(self, request, pk=None):
+        user = request.user
+        if user.role != 'admin':
+            return Response({"detail": "Permission denied"}, status=403)
+
+        request_obj = self.get_object()
+        request_obj.status = 'approved'
+        request_obj.save()
+        return Response({"detail": "Wishlist approved"}, status=200)
 
 
