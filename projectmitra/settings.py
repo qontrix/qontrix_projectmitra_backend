@@ -30,6 +30,9 @@ SECRET_KEY = 'django-insecure-sjvsfwg3wx^)n1zj0c-=!@o=c(-icvf(b@*=)-9)^0^$v@r0uv
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 ALLOWED_HOSTS = ['*']  # for deployment 
 
 
@@ -114,12 +117,19 @@ WSGI_APPLICATION = 'projectmitra.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+BASE_DIR = Path(__file__).resolve().parent.parent
 
-
-
-DATABASES = {  #for postgresdb integration with render with Internal DB URL: postgresql://tech_mitra_user:oerw1En7eCslVANKygIL0cFvGoBLwEkd@dpg-d1qk1qq4d50c739cg390-a/tech_mitra
-    'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
+# Default: SQLite for local development
+DATABASES = {
+    'default': dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR}/db.sqlite3'
+    )
 }
+
+
+#DATABASES = {  #for postgresdb integration with render with Internal DB URL: postgresql://tech_mitra_user:oerw1En7eCslVANKygIL0cFvGoBLwEkd@dpg-d1qk1qq4d50c739cg390-a/tech_mitra
+ #   'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
+#}
 
 
 # Password validation
