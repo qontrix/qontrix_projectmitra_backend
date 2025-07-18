@@ -119,17 +119,20 @@ WSGI_APPLICATION = 'projectmitra.wsgi.application'
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Default: SQLite for local development
-#DATABASES = {
-#    'default': dj_database_url.config(
-#        default=f'sqlite:///{BASE_DIR}/db.sqlite3'
-#    )
-#}
 
+# Check if running on Render (or use DEBUG=False as the flag)
+if os.getenv("RENDER") == "true":  # You can set this in Render's env
+    DATABASES = {
+        'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
-DATABASES = {  #for postgresdb integration with render with Internal DB URL: postgresql://tech_mitra_drh1_user:9nH0O5q7RBddxj1k3jAnv5jT4vEjIGpU@dpg-d1t7remmcj7s73b98ifg-a/tech_mitra_drh1
-    'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
-}
 
 
 # Password validation
