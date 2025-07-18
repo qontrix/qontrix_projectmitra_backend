@@ -52,7 +52,7 @@ class Project(models.Model):            # Core Fields for project info
     setup_video_url = models.URLField(blank=True, null=True)
     live_demo_url = models.URLField(blank=True, null=True)
     project_zip = models.URLField(max_length=500, null=True, blank=True)
-    documentation = models.URLField(max_length=1000, null=True, blank=True)
+    documentation = models.URLField(max_length=500, null=True, blank=True)
 
 
 
