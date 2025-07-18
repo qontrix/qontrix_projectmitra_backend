@@ -127,7 +127,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 #}
 
 
-DATABASES = {  #for postgresdb integration with render with Internal DB URL: postgresql://tech_mitra_user:oerw1En7eCslVANKygIL0cFvGoBLwEkd@dpg-d1qk1qq4d50c739cg390-a/tech_mitra
+DATABASES = {  #for postgresdb integration with render with Internal DB URL: postgresql://tech_mitra_drh1_user:9nH0O5q7RBddxj1k3jAnv5jT4vEjIGpU@dpg-d1t7remmcj7s73b98ifg-a/tech_mitra_drh1
     'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
 }
 
