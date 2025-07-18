@@ -120,16 +120,16 @@ WSGI_APPLICATION = 'projectmitra.wsgi.application'
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Default: SQLite for local development
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f'sqlite:///{BASE_DIR}/db.sqlite3'
-    )
-}
-
-
-#DATABASES = {  #for postgresdb integration with render with Internal DB URL: postgresql://tech_mitra_user:oerw1En7eCslVANKygIL0cFvGoBLwEkd@dpg-d1qk1qq4d50c739cg390-a/tech_mitra
- #   'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
+#DATABASES = {
+#    'default': dj_database_url.config(
+#        default=f'sqlite:///{BASE_DIR}/db.sqlite3'
+#    )
 #}
+
+
+DATABASES = {  #for postgresdb integration with render with Internal DB URL: postgresql://tech_mitra_user:oerw1En7eCslVANKygIL0cFvGoBLwEkd@dpg-d1qk1qq4d50c739cg390-a/tech_mitra
+    'default': dj_database_url.config(default=os.getenv("DATABASE_URL"))
+}
 
 
 # Password validation

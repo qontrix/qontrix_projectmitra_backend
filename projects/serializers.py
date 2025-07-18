@@ -2,6 +2,10 @@ from rest_framework import serializers
 from .models import Project, Purchase, Comment, WishlistRequest
 
 class ProjectSerializer(serializers.ModelSerializer):
+    thumbnail = serializers.URLField(required=False, allow_null=True)
+    project_zip = serializers.URLField(required=False, allow_null=True)
+    documentation = serializers.URLField(required=False, allow_null=True)
+
     class Meta:
         model = Project
         exclude = ['seller', 'upload_date', 'total_downloads', 'status', 'is_featured']
@@ -15,6 +19,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         if not isinstance(value, list) or len(value) < 1:
             raise serializers.ValidationError("At least 1 gallery image is required.")
         return value
+
 
 
 
