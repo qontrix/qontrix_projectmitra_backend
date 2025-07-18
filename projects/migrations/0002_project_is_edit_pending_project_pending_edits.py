@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
             name='pending_edits',
             field=models.JSONField(blank=True, null=True),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='project',
             name='documentation',
             field=models.URLField(blank=True, max_length=500, null=True),
