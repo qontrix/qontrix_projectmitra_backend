@@ -25,12 +25,12 @@ class Migration(migrations.Migration):
             name='documentation',
             field=models.URLField(blank=True, max_length=500, null=True),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='project',
             name='project_zip',
             field=models.URLField(blank=True, max_length=500, null=True),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='project',
             name='thumbnail',
             field=models.TextField(blank=True, max_length=500, null=True),
