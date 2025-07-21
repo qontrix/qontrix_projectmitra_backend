@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, Purchase, Comment, WishlistRequest
+from .models import Project, Purchase, Comment, Wishlist
 
 class ProjectSerializer(serializers.ModelSerializer):
     thumbnail = serializers.URLField(required=False, allow_null=True)
@@ -20,6 +20,20 @@ class ProjectSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("At least 1 gallery image is required.")
         return value
 
+class MyProjectsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = [
+            'id',
+            'title',
+            'status',
+            'is_edit_pending',
+            'price',
+            'project_type',
+            'upload_date',
+            'thumbnail',  # Optional visual aid in frontend
+        ]
+
 
 
 
@@ -39,8 +53,9 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 
-class WishlistRequestSerializer(serializers.ModelSerializer):
+class WishlistSerializer(serializers.ModelSerializer):
+    project_title = serializers.ReadOnlyField(source='project.title')
+
     class Meta:
-        model = WishlistRequest
-        fields = '__all__'
-        read_only_fields = ['user', 'status']
+        model = Wishlist
+        fields = ['id', 'project', 'project_title', 'added_on']

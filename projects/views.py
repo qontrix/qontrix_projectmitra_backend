@@ -1,20 +1,22 @@
 from django.shortcuts import render
-from rest_framework import viewsets, permissions, status
-from .models import Project, Purchase, Comment, WishlistRequest
-from .serializers import ProjectSerializer, PurchaseSerializer, CommentSerializer, WishlistRequestSerializer
+from rest_framework import viewsets, permissions, status, generics
+from .models import Project, Purchase, Comment, Wishlist
+from .serializers import ProjectSerializer, PurchaseSerializer, CommentSerializer, MyProjectsSerializer, WishlistSerializer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.db.models import Q
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from projects.permissions import IsSeller, IsBuyer
+
+
+class BuyerProjectListView(generics.ListAPIView):
+    queryset = Project.objects.filter(status='approved')
+    serializer_class = ProjectSerializer
+    permission_classes = [IsAuthenticated, IsBuyer]
 
 
 
-
-from rest_framework import viewsets, permissions
-from .models import Project
-from .serializers import ProjectSerializer
-from projects.permissions import IsSeller
 
 class ProjectViewSet(viewsets.ModelViewSet):
     queryset = Project.objects.all()
@@ -35,6 +37,35 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project.save()
         return Response({"detail": "Project approved"}, status=200)    
     
+class MyProjectsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        # ✅ Only allow sellers
+        if user.role != 'seller':
+            print(user.role)
+            return Response({"error": "Only sellers can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+
+        # ✅ Filter base query by logged-in user
+        projects = Project.objects.filter(seller=user)
+
+        # ✅ Apply optional query params (e.g., status=Pending)
+        status_param = request.query_params.get('status')
+        if status_param:
+            projects = projects.filter(status=status_param)
+
+        edit_pending = request.query_params.get('edit_pending')
+        if edit_pending is not None:
+            if edit_pending.lower() == 'true':
+                projects = projects.filter(is_edit_pending=True)
+            elif edit_pending.lower() == 'false':
+                projects = projects.filter(is_edit_pending=False)
+
+        # ✅ Serialize and return
+        serializer = MyProjectsSerializer(projects, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class PurchaseViewSet(viewsets.ReadOnlyModelViewSet):
@@ -82,29 +113,29 @@ class CommentViewSet(viewsets.ModelViewSet):
 
 
 
-class WishlistRequestViewSet(viewsets.ModelViewSet):
-    serializer_class = WishlistRequestSerializer
-    permission_classes = [permissions.IsAuthenticated]
+class WishlistViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        user = self.request.user
-        if user.role == 'admin':
-            return WishlistRequest.objects.all()
-        return WishlistRequest.objects.filter(user=user)
+    def list(self, request):
+        wishlist = Wishlist.objects.filter(user=request.user)
+        serializer = WishlistSerializer(wishlist, many=True)
+        return Response(serializer.data)
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def create(self, request, pk=None):
+        try:
+            project = Project.objects.get(pk=pk)
+            Wishlist.objects.get_or_create(user=request.user, project=project)
+            return Response({"message": "Added to wishlist"}, status=status.HTTP_201_CREATED)
+        except Project.DoesNotExist:
+            return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
-    def approve(self, request, pk=None):
-        user = request.user
-        if user.role != 'admin':
-            return Response({"detail": "Permission denied"}, status=403)
-
-        request_obj = self.get_object()
-        request_obj.status = 'approved'
-        request_obj.save()
-        return Response({"detail": "Wishlist approved"}, status=200)
+    def destroy(self, request, pk=None):
+        try:
+            wishlist_item = Wishlist.objects.get(user=request.user, project_id=pk)
+            wishlist_item.delete()
+            return Response({"message": "Removed from wishlist"}, status=status.HTTP_204_NO_CONTENT)
+        except Wishlist.DoesNotExist:
+            return Response({"error": "Item not in wishlist"}, status=status.HTTP_404_NOT_FOUND)
     
     
     
