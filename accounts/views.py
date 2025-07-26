@@ -5,6 +5,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserLoginSerializer, UserRegistrationSerializer
 
+#from projectmitra.utils.email_utils import send_custom_email
+
+# Inside RegisterAPIView
+
 
 class RegisterAPIView(APIView):
     def post(self, request):
@@ -23,6 +27,11 @@ class RegisterAPIView(APIView):
                     "role": user.role
                 }
             }, status=status.HTTP_201_CREATED)
+        """send_custom_email(  # for email notification
+        subject="Welcome to ProjectMitra!",
+        message=f"Hi {user.name}, your registration was successful. You can now start using ProjectMitra.",
+        recipient_list=[user.email]
+        )   """ 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

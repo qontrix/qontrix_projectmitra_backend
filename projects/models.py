@@ -69,18 +69,23 @@ class Project(models.Model):            # Core Fields for project info
     
     
 class Purchase(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    payment_status = models.CharField(max_length=20)
-    timestamp = models.DateTimeField(auto_now_add=True)
+    purchase_date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.buyer.name} bought {self.project.title}"
 
 
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    rating = models.IntegerField()
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name="comments")
     text = models.TextField()
+    rating = models.IntegerField(default=1)  # Rating from 1 to 5
     timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.name} - {self.project.title}"
     
     
 class Wishlist(models.Model):

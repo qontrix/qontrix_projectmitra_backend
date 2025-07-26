@@ -37,19 +37,29 @@ class MyProjectsSerializer(serializers.ModelSerializer):
 
 
 
-class PurchaseSerializer(serializers.ModelSerializer):
+class PurchaseSerializer(serializers.ModelSerializer):    #for seller side
     class Meta:
         model = Purchase
         fields = '__all__'
         read_only_fields = ['user', 'timestamp']
 
+class MyPurchaseSerializer(serializers.ModelSerializer):   #for buyer side
+    project_title = serializers.CharField(source='project.title', read_only=True)
+    project_id = serializers.IntegerField(source='project.id', read_only=True)
+    project_price = serializers.DecimalField(source='project.price', max_digits=10, decimal_places=2, read_only=True)
 
+    class Meta:
+        model = Purchase
+        fields = ['id', 'project_id', 'project_title', 'project_price', 'purchase_date']
 
 class CommentSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.name', read_only=True)
+
     class Meta:
         model = Comment
-        fields = '__all__'
-        read_only_fields = ['user', 'timestamp']
+        fields = ['id', 'user_name', 'text', 'rating', 'timestamp', 'project']
+        read_only_fields = ['user_name', 'timestamp', 'project']
+
 
 
 

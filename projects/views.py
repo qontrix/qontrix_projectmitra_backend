@@ -1,13 +1,22 @@
 from django.shortcuts import render
 from rest_framework import viewsets, permissions, status, generics
+
+#from projectmitra.utils.email_utils import send_custom_email
 from .models import Project, Purchase, Comment, Wishlist
-from .serializers import ProjectSerializer, PurchaseSerializer, CommentSerializer, MyProjectsSerializer, WishlistSerializer
+from .serializers import ProjectSerializer, PurchaseSerializer, CommentSerializer, MyProjectsSerializer, WishlistSerializer, MyPurchaseSerializer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.db.models import Q
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from projects.permissions import IsSeller, IsBuyer
+
+
+
+
+
+
+
 
 
 class BuyerProjectListView(generics.ListAPIView):
@@ -68,7 +77,7 @@ class MyProjectsView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class PurchaseViewSet(viewsets.ReadOnlyModelViewSet):
+class PurchaseViewSet(viewsets.ReadOnlyModelViewSet): # for admin
     serializer_class = PurchaseSerializer
     permission_classes = [IsAuthenticated]
 
@@ -94,7 +103,13 @@ class PurchaseViewSet(viewsets.ReadOnlyModelViewSet):
 
         return queryset
     
-    
+class MyPurchasesView(APIView):    #buyer checking purchased projects
+    permission_classes = [IsAuthenticated, IsBuyer]
+
+    def get(self, request):
+        purchases = Purchase.objects.filter(buyer=request.user).select_related('project')
+        serializer = MyPurchaseSerializer(purchases, many=True)
+        return Response(serializer.data)    
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -102,13 +117,18 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        project_id = self.request.query_params.get('project')
-        if project_id:
-            return Comment.objects.filter(project__id=project_id)
-        return Comment.objects.all()
+        return Comment.objects.filter(project__id=self.kwargs['project_id'])
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        project = Project.objects.get(id=self.kwargs['project_id'])
+        serializer.save(user=self.request.user, project=project)
+
+    def destroy(self, request, *args, **kwargs):
+        comment = self.get_object()
+        if comment.user != request.user:
+            return Response({"error": "You can delete only your own comments."}, status=403)
+        return super().destroy(request, *args, **kwargs)
+
 
 
 
@@ -169,7 +189,7 @@ class SellerEditProjectView(APIView):
 
 
 class ApproveProjectEditView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAdminUser]
 
     def post(self, request, pk):
         try:
@@ -177,21 +197,21 @@ class ApproveProjectEditView(APIView):
         except Project.DoesNotExist:
             return Response({"error": "Project not found"}, status=404)
 
-        if not project.is_edit_pending or not project.pending_edits:
-            return Response({"error": "No pending edits to approve."}, status=400)
-
-        # Apply pending edits
-        for key, value in project.pending_edits.items():
-            setattr(project, key, value)
-
-        project.is_edit_pending = False
-        project.pending_edits = None
+        project.status = 'approved'
         project.save()
 
-        return Response({"message": "Edits approved and applied."}, status=200)
+        """# Optional: Notify seller
+        send_custom_email(
+            subject="Project Approved ✅",
+            message=f"Your project '{project.title}' has been approved by the admin.",
+            recipient_list=[project.seller.email]
+        )"""
+
+        return Response({"message": "Project approved successfully"}, status=200)
+
 
 class RejectProjectEditView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAdminUser]
 
     def post(self, request, pk):
         try:
@@ -199,8 +219,14 @@ class RejectProjectEditView(APIView):
         except Project.DoesNotExist:
             return Response({"error": "Project not found"}, status=404)
 
-        project.pending_edits = None
-        project.is_edit_pending = False
+        project.status = 'rejected'
         project.save()
 
-        return Response({"message": "Pending edits rejected and discarded."}, status=200)
+        # Optional: Notify seller
+        """send_custom_email(
+            subject="Project Rejected ❌",
+            message=f"Your project '{project.title}' has been rejected by the admin.",
+            recipient_list=[project.seller.email]
+        )"""
+
+        return Response({"message": "Project rejected successfully"}, status=200)

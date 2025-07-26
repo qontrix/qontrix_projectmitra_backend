@@ -9,8 +9,21 @@ from .views import (
     SellerEditProjectView,
     ApproveProjectEditView,
     RejectProjectEditView,
-    MyProjectsView
+    MyProjectsView,
+    MyPurchasesView
 )
+
+
+comment_list = CommentViewSet.as_view({
+    'get': 'list',
+    'post': 'create'
+})
+
+comment_detail = CommentViewSet.as_view({
+    'delete': 'destroy'
+})
+
+
 
 router = DefaultRouter()
 router.register(r'projects', ProjectViewSet, basename='projects')
@@ -35,4 +48,16 @@ urlpatterns = router.urls + [
     #Buyer wishlist controls
     path('buyer/wishlist/', WishlistViewSet.as_view({'get': 'list'}), name='wishlist-list'),
     path('buyer/wishlist/<int:pk>/', WishlistViewSet.as_view({'post': 'create', 'delete': 'destroy'}), name='wishlist-manage'),
+    
+    #Buyer checking purchases projects
+    path('buyer/my-purchases/', MyPurchasesView.as_view(), name='my-purchases'),
+    
+    #Buyers can add/remove comments
+    path('projects/<int:project_id>/comments/', comment_list, name='project-comments'),
+    path('projects/<int:project_id>/comments/<int:pk>/', comment_detail, name='project-comment-detail'),
+    
+    #Admin approve/reject projects
+    path("admin/projects/<int:pk>/approve/", ApproveProjectEditView.as_view(), name="approve-project"),
+    path("admin/projects/<int:pk>/reject/", RejectProjectEditView.as_view(), name="reject-project"),
+
 ]
