@@ -16,7 +16,7 @@ class CreateAdminUserView(APIView):
         password = 'password123'  # choose a strong password
 
         if not User.objects.filter(email=email).exists():
-            admin = User.objects.create_user(
+            admin = User.objects.create_superuser(
                 email=email,
                 name='Arkodip Admin',
                 password=password,
