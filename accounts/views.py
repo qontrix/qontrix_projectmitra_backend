@@ -10,10 +10,11 @@ from django.contrib.auth import get_user_model
 # Inside RegisterAPIView
 User = get_user_model()
 
+#Admin Account Creation
 class CreateAdminUserView(APIView):
     def post(self, request):
-        email = 'arkodip4@example.com'  # you can change this if needed
-        password = 'password123'  # choose a strong password
+        email = 'arkodip4@example.com'  # Change if needed
+        password = 'password123'        # Use strong password
 
         if not User.objects.filter(email=email).exists():
             admin = User.objects.create_superuser(
@@ -24,9 +25,36 @@ class CreateAdminUserView(APIView):
                 is_staff=True,
                 is_superuser=True
             )
-            return Response({"message": "Admin user created."}, status=status.HTTP_201_CREATED)
+
+            refresh = RefreshToken.for_user(admin)
+
+            return Response({
+                "message": "Admin user created successfully.",
+                "admin": {
+                    "id": admin.id,
+                    "email": admin.email,
+                    "name": admin.name,
+                    "role": admin.role
+                },
+                "refresh": str(refresh),
+                "access": str(refresh.access_token)
+            }, status=status.HTTP_201_CREATED)
         else:
-            return Response({"message": "Admin user already exists."}, status=status.HTTP_200_OK)
+            # Generate token for existing admin
+            admin = User.objects.get(email=email)
+            refresh = RefreshToken.for_user(admin)
+
+            return Response({
+                "message": "Admin user already exists.",
+                "admin": {
+                    "id": admin.id,
+                    "email": admin.email,
+                    "name": admin.name,
+                    "role": admin.role
+                },
+                "refresh": str(refresh),
+                "access": str(refresh.access_token)
+            }, status=status.HTTP_200_OK)
 
 
 
