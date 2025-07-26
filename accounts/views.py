@@ -4,10 +4,30 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import UserLoginSerializer, UserRegistrationSerializer
-
+from django.contrib.auth import get_user_model
 #from projectmitra.utils.email_utils import send_custom_email
 
 # Inside RegisterAPIView
+User = get_user_model()
+
+class CreateAdminUserView(APIView):
+    def post(self, request):
+        email = 'arkodip4@example.com'  # you can change this if needed
+        password = 'password123'  # choose a strong password
+
+        if not User.objects.filter(email=email).exists():
+            admin = User.objects.create_user(
+                email=email,
+                name='Arkodip Admin',
+                password=password,
+                role='admin',
+                is_staff=True,
+                is_superuser=True
+            )
+            return Response({"message": "Admin user created."}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"message": "Admin user already exists."}, status=status.HTTP_200_OK)
+
 
 
 class RegisterAPIView(APIView):
