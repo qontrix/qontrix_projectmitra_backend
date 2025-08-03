@@ -64,6 +64,14 @@ class RegisterAPIView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             refresh = RefreshToken.for_user(user)
+            '''try:
+                send_custom_email(
+                subject="Welcome to ProjectMitra!",
+                message=f"Hi {user.name}, your registration was successful.",
+                recipient_list=[user.email]
+                )
+            except Exception as e:
+                print(f"Email sending failed: {str(e)}")'''
             return Response({
                 "message": "User registered successfully",
                 "refresh": str(refresh),
@@ -75,11 +83,7 @@ class RegisterAPIView(APIView):
                     "role": user.role
                 }
             }, status=status.HTTP_201_CREATED)
-        """send_custom_email(  # for email notification
-        subject="Welcome to ProjectMitra!",
-        message=f"Hi {user.name}, your registration was successful. You can now start using ProjectMitra.",
-        recipient_list=[user.email]
-        )   """ 
+                        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 

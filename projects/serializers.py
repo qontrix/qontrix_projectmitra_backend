@@ -35,6 +35,10 @@ class MyProjectsSerializer(serializers.ModelSerializer):
         ]
 
 
+class AdminProjectSerializer(serializers.ModelSerializer): #for admin to see project info
+    class Meta:
+        model = Project
+        fields = '__all__'
 
 
 class PurchaseSerializer(serializers.ModelSerializer):    #for seller side

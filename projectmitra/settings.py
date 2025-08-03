@@ -178,3 +178,19 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+
+
+#RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+#RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
+
+'''
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.zoho.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'hr@qontrix.com'
+EMAIL_HOST_PASSWORD = 'ezv3mNhv6XxD'
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER '''

@@ -2,20 +2,47 @@ from django.shortcuts import render
 from rest_framework import viewsets, permissions, status, generics
 
 #from projectmitra.utils.email_utils import send_custom_email
-from .models import Project, Purchase, Comment, Wishlist
-from .serializers import ProjectSerializer, PurchaseSerializer, CommentSerializer, MyProjectsSerializer, WishlistSerializer, MyPurchaseSerializer
+from .models import Project, Purchase, Comment, Wishlist#, Payment
+from .serializers import ProjectSerializer, PurchaseSerializer, CommentSerializer, MyProjectsSerializer, WishlistSerializer, MyPurchaseSerializer, AdminProjectSerializer
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.db.models import Q
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from projects.permissions import IsSeller, IsBuyer
+#import razorpay
+from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 
+class AdminProjectListView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
+    def get(self, request):
+        status_filter = request.GET.get('status')  # Optional query param
+        if status_filter:
+            projects = Project.objects.filter(status=status_filter)
+        else:
+            projects = Project.objects.all()
+        
+        serializer = AdminProjectSerializer(projects, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
+class AdminEditProjectView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
+    def put(self, request, pk):
+        try:
+            project = Project.objects.get(pk=pk)
+        except Project.DoesNotExist:
+            return Response({'error': 'Project not found'}, status=status.HTTP_404_NOT_FOUND)
 
+        serializer = AdminProjectSerializer(project, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'Project updated successfully', 'project': serializer.data}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -200,13 +227,14 @@ class ApproveProjectEditView(APIView):
         project.status = 'approved'
         project.save()
 
-        """# Optional: Notify seller
-        send_custom_email(
-            subject="Project Approved ✅",
-            message=f"Your project '{project.title}' has been approved by the admin.",
-            recipient_list=[project.seller.email]
-        )"""
-
+        '''try:
+            send_custom_email(
+                subject="Your Project Has Been Approved",
+                message=f"Hi {project.seller.name},\n\nYour project '{project.title}' has been approved and is now visible to all users.\n\nThanks,\nProjectMitra Team",
+                recipient_list=[project.seller.email]
+            )
+        except Exception as e:
+            print(f"Email sending failed: {str(e)}")'''
         return Response({"message": "Project approved successfully"}, status=200)
 
 
@@ -222,11 +250,82 @@ class RejectProjectEditView(APIView):
         project.status = 'rejected'
         project.save()
 
-        # Optional: Notify seller
-        """send_custom_email(
-            subject="Project Rejected ❌",
-            message=f"Your project '{project.title}' has been rejected by the admin.",
-            recipient_list=[project.seller.email]
-        )"""
+        '''try:
+            send_custom_email(
+                    subject="Your Project Edit Was Rejected",
+                     message=f"Hi {project.seller.name},\n\nYour request to edit project '{project.title}' has been rejected by the admin.\n\nThanks,\nProjectMitra Team",
+                     recipient_list=[project.seller.email]
+                )
+        except Exception as e:
+            print(f"Email sending failed: {str(e)}")'''
 
         return Response({"message": "Project rejected successfully"}, status=200)
+'''
+
+class CreateRazorpayOrderView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        project_id = request.data.get('project_id')
+        project = Project.objects.get(id=project_id)
+
+        if project.project_type == 'Free':
+            return Response({'error': 'Project is free. No need to pay.'}, status=400)
+
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+        amount = int(project.price)  # in INR
+
+        data = {
+            "amount": amount,
+            "currency": "INR",
+            "receipt": f"receipt_{project_id}",
+            "payment_capture": 1
+        }
+
+        order = client.order.create(data=data)
+
+        Payment.objects.create(
+            user=request.user,
+            project=project,
+            razorpay_order_id=order['id'],
+            amount=project.price
+        )
+
+        return Response({
+            "order_id": order['id'],
+            "razorpay_key": settings.RAZORPAY_KEY_ID,
+            "amount": amount,
+            "currency": "INR",
+            "project": project.title
+        })
+
+class VerifyRazorpayPaymentView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        data = request.data
+        order_id = data.get('razorpay_order_id')
+        payment_id = data.get('razorpay_payment_id')
+        signature = data.get('razorpay_signature')
+
+        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+        try:
+            client.utility.verify_payment_signature({
+                'razorpay_order_id': order_id,
+                'razorpay_payment_id': payment_id,
+                'razorpay_signature': signature
+            })
+        except:
+            return Response({"error": "Payment verification failed."}, status=400)
+
+        payment = Payment.objects.get(razorpay_order_id=order_id)
+        payment.razorpay_payment_id = payment_id
+        payment.razorpay_signature = signature
+        payment.is_paid = True
+        payment.save()
+
+        # Add to Purchase table so user can access project
+        Purchase.objects.create(user=request.user, project=payment.project)
+
+        return Response({"message": "Payment verified and purchase successful!"}, status=200)  '''

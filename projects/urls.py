@@ -10,7 +10,11 @@ from .views import (
     ApproveProjectEditView,
     RejectProjectEditView,
     MyProjectsView,
-    MyPurchasesView
+    MyPurchasesView,
+    AdminProjectListView,
+    AdminEditProjectView
+    #CreateRazorpayOrderView,
+    #VerifyRazorpayPaymentView
 )
 
 
@@ -34,6 +38,12 @@ router.register(r'wishlist', WishlistViewSet, basename='wishlist')
 urlpatterns = router.urls + [
     # Seller edit API
     path("seller/projects/<int:pk>/edit/", SellerEditProjectView.as_view(), name="seller-edit-project"),
+    
+    # Admin view all the projects
+    path("admin/all-projects/", AdminProjectListView.as_view(), name="admin-all-projects"),
+    
+    # Admin edit projects
+    path("admin/projects/<int:pk>/edit/", AdminEditProjectView.as_view(), name="admin-edit-project"),
 
     # Admin approval/rejection APIs
     path("admin/projects/<int:pk>/approve/", ApproveProjectEditView.as_view(), name="approve-project"),
@@ -59,5 +69,9 @@ urlpatterns = router.urls + [
     #Admin approve/reject projects
     path("admin/projects/<int:pk>/approve/", ApproveProjectEditView.as_view(), name="approve-project"),
     path("admin/projects/<int:pk>/reject/", RejectProjectEditView.as_view(), name="reject-project"),
+    
+    #Create payment orders and verify orders
+    #path('payment/create-order/', CreateRazorpayOrderView.as_view(), name='create-order'),
+    #path('payment/verify/', VerifyRazorpayPaymentView.as_view(), name='verify-payment'),
 
 ]
