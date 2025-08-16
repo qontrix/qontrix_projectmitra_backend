@@ -29,6 +29,23 @@ class AdminProjectListView(APIView):
         serializer = AdminProjectSerializer(projects, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+
+class AdminProjectDetailView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request, pk):
+        try:
+            project = Project.objects.get(pk=pk)
+        except Project.DoesNotExist:
+            return Response({"error": "Project not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = AdminProjectSerializer(project)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+
 class AdminEditProjectView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
 
@@ -204,14 +221,35 @@ class SellerEditProjectView(APIView):
             "setup_video_url", "live_demo_url"
         ]
 
-        pending_changes = {field: data.get(field) for field in allowed_fields if data.get(field) is not None}
+        # Apply updates directly
+        for field in allowed_fields:
+            if field in data and data[field] is not None:
+                setattr(project, field, data[field])
 
-        
-        project.pending_edits = pending_changes
-        project.is_edit_pending = True
         project.save()
 
-        return Response({"message": "Project update submitted for admin review."}, status=200)
+        return Response({
+            "message": "Project updated successfully.",
+            "project": {
+                "id": project.id,
+                "title": project.title,
+                "short_description": project.short_description,
+                "full_description": project.full_description,
+                "category": project.category,
+                "tech_stack": project.tech_stack,
+                "tools": project.tools,
+                "project_type": project.project_type,
+                "price": project.price,
+                "tags": project.tags,
+                "setup_video_url": project.setup_video_url,
+                "live_demo_url": project.live_demo_url,
+            }
+        }, status=200)
+
+
+
+
+
 
 
 
@@ -260,72 +298,72 @@ class RejectProjectEditView(APIView):
             print(f"Email sending failed: {str(e)}")'''
 
         return Response({"message": "Project rejected successfully"}, status=200)
-'''
 
-class CreateRazorpayOrderView(APIView):
-    permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        project_id = request.data.get('project_id')
-        project = Project.objects.get(id=project_id)
+# class CreateRazorpayOrderView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-        if project.project_type == 'Free':
-            return Response({'error': 'Project is free. No need to pay.'}, status=400)
+#     def post(self, request):
+#         project_id = request.data.get('project_id')
+#         project = Project.objects.get(id=project_id)
 
-        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
-        amount = int(project.price)  # in INR
+#         if project.project_type == 'Free':
+#             return Response({'error': 'Project is free. No need to pay.'}, status=400)
 
-        data = {
-            "amount": amount,
-            "currency": "INR",
-            "receipt": f"receipt_{project_id}",
-            "payment_capture": 1
-        }
+#         client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+#         amount = int(project.price)  # in INR
 
-        order = client.order.create(data=data)
+#         data = {
+#             "amount": amount,
+#             "currency": "INR",
+#             "receipt": f"receipt_{project_id}",
+#             "payment_capture": 1
+#         }
 
-        Payment.objects.create(
-            user=request.user,
-            project=project,
-            razorpay_order_id=order['id'],
-            amount=project.price
-        )
+#         order = client.order.create(data=data)
 
-        return Response({
-            "order_id": order['id'],
-            "razorpay_key": settings.RAZORPAY_KEY_ID,
-            "amount": amount,
-            "currency": "INR",
-            "project": project.title
-        })
+#         Payment.objects.create(
+#             user=request.user,
+#             project=project,
+#             razorpay_order_id=order['id'],
+#             amount=project.price
+#         )
 
-class VerifyRazorpayPaymentView(APIView):
-    permission_classes = [IsAuthenticated]
+#         return Response({
+#             "order_id": order['id'],
+#             "razorpay_key": settings.RAZORPAY_KEY_ID,
+#             "amount": amount,
+#             "currency": "INR",
+#             "project": project.title
+#         })
 
-    def post(self, request):
-        data = request.data
-        order_id = data.get('razorpay_order_id')
-        payment_id = data.get('razorpay_payment_id')
-        signature = data.get('razorpay_signature')
+# class VerifyRazorpayPaymentView(APIView):
+#     permission_classes = [IsAuthenticated]
 
-        client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+#     def post(self, request):
+#         data = request.data
+#         order_id = data.get('razorpay_order_id')
+#         payment_id = data.get('razorpay_payment_id')
+#         signature = data.get('razorpay_signature')
 
-        try:
-            client.utility.verify_payment_signature({
-                'razorpay_order_id': order_id,
-                'razorpay_payment_id': payment_id,
-                'razorpay_signature': signature
-            })
-        except:
-            return Response({"error": "Payment verification failed."}, status=400)
+#         client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
-        payment = Payment.objects.get(razorpay_order_id=order_id)
-        payment.razorpay_payment_id = payment_id
-        payment.razorpay_signature = signature
-        payment.is_paid = True
-        payment.save()
+#         try:
+#             client.utility.verify_payment_signature({
+#                 'razorpay_order_id': order_id,
+#                 'razorpay_payment_id': payment_id,
+#                 'razorpay_signature': signature
+#             })
+#         except:
+#             return Response({"error": "Payment verification failed."}, status=400)
 
-        # Add to Purchase table so user can access project
-        Purchase.objects.create(user=request.user, project=payment.project)
+#         payment = Payment.objects.get(razorpay_order_id=order_id)
+#         payment.razorpay_payment_id = payment_id
+#         payment.razorpay_signature = signature
+#         payment.is_paid = True
+#         payment.save()
 
-        return Response({"message": "Payment verified and purchase successful!"}, status=200)  '''
+#         # Add to Purchase table so user can access project
+#         Purchase.objects.create(user=request.user, project=payment.project)
+
+#         return Response({"message": "Payment verified and purchase successful!"}, status=200) 

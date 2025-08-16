@@ -12,7 +12,8 @@ from .views import (
     MyProjectsView,
     MyPurchasesView,
     AdminProjectListView,
-    AdminEditProjectView
+    AdminEditProjectView,
+    AdminProjectDetailView
     #CreateRazorpayOrderView,
     #VerifyRazorpayPaymentView
 )
@@ -41,6 +42,9 @@ urlpatterns = router.urls + [
     
     # Admin view all the projects
     path("admin/all-projects/", AdminProjectListView.as_view(), name="admin-all-projects"),
+
+    path("admin/projects/<int:pk>/", AdminProjectDetailView.as_view(), name="admin-project-detail"),
+
     
     # Admin edit projects
     path("admin/projects/<int:pk>/edit/", AdminEditProjectView.as_view(), name="admin-edit-project"),
