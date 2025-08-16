@@ -23,16 +23,8 @@ class ProjectSerializer(serializers.ModelSerializer):
 class MyProjectsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
-        fields = [
-            'id',
-            'title',
-            'status',
-            'is_edit_pending',
-            'price',
-            'project_type',
-            'upload_date',
-            'thumbnail',  # Optional visual aid in frontend
-        ]
+    
+        fields = '__all__'
 
 
 class AdminProjectSerializer(serializers.ModelSerializer): #for admin to see project info
