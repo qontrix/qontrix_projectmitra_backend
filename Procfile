@@ -1,0 +1,4 @@
+
+web: gunicorn projectmitra.wsgi
+
+
